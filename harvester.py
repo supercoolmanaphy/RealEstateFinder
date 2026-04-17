@@ -21,6 +21,7 @@ import logging
 import os
 import time
 from datetime import date, datetime
+from datetime import timezone
 
 import requests
 import schedule
@@ -73,6 +74,14 @@ def parse_iso_date(value: str | None) -> date | None:
     """Parse YYYY-MM-DD string into a date object."""
     if not value:
         return None
+
+
+def positive_int(value: str) -> int:
+    """Argparse validator for strictly positive integer values."""
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError:
@@ -294,7 +303,7 @@ def upsert_lead(supabase: Client, lead_data: dict, property_id: str) -> bool:
     score, notes = compute_motivation_score(lead_data)
     lead_data["motivation_score"] = score
     lead_data["motivation_notes"] = notes
-    lead_data["last_verified_at"] = datetime.utcnow().isoformat()
+    lead_data["last_verified_at"] = datetime.now(timezone.utc).isoformat()
 
     # Serialize raw_data if present
     if "raw_data" in lead_data and not isinstance(lead_data["raw_data"], str):
@@ -335,7 +344,7 @@ def run_preforeclosure_harvest(supabase: Client, zip_limit: int = DEFAULT_ATTOM_
 
     supabase.table("harvest_runs").update({
         "status": "success",
-        "finished_at": datetime.utcnow().isoformat(),
+        "finished_at": datetime.now(timezone.utc).isoformat(),
         "records_fetched": fetched,
         "records_inserted": inserted,
         "errors": errors,
@@ -379,7 +388,7 @@ def run_tax_delinquent_harvest(supabase: Client):
 
     supabase.table("harvest_runs").update({
         "status": "success",
-        "finished_at": datetime.utcnow().isoformat(),
+        "finished_at": datetime.now(timezone.utc).isoformat(),
         "records_fetched": fetched,
         "records_inserted": inserted,
         "errors": errors,
@@ -398,7 +407,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ParcellIQ Data Harvester")
     parser.add_argument("--source", choices=["attom", "county", "all"], default="all")
     parser.add_argument("--type", choices=["tax_delinquent", "pre_foreclosure", "all"], default="all")
-    parser.add_argument("--zip-limit", type=int, default=DEFAULT_ATTOM_ZIP_LIMIT)
+    parser.add_argument("--zip-limit", type=positive_int, default=DEFAULT_ATTOM_ZIP_LIMIT)
     parser.add_argument("--schedule", action="store_true", help="Run on weekly schedule")
     args = parser.parse_args()
 
