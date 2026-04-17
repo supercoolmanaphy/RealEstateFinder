@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ParcellIQ — Off-Market Leads for Bay Area Realtors</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FAF8F3;
+      --dark: #1A1A16;
+      --gold: #C4892A;
+      --gold-light: #F0C56A;
+      --rust: #8B3A1E;
+      --sage: #3D5A47;
+      --muted: #6B6860;
+      --border: #E2DDD4;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); }
+
+    /* NAV */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; border-bottom: 0.5px solid var(--border); }
+    .logo { font-family: 'DM Serif Display', serif; font-size: 1.2rem; }
+    .logo em { font-style: italic; }
+    .logo sup { font-family: 'DM Sans', sans-serif; font-size: 9px; color: var(--gold); vertical-align: super; letter-spacing: 0.1em; text-transform: uppercase; }
+    .nav-links { display: flex; gap: 1.5rem; font-size: 12px; color: var(--muted); }
+    .nav-links a { text-decoration: none; color: inherit; }
+    .nav-links a.cta { color: var(--dark); font-weight: 500; }
+
+    /* TICKER */
+    .ticker { background: var(--dark); color: var(--cream); padding: 0.5rem 2rem; font-size: 11px; letter-spacing: 0.04em; display: flex; gap: 2rem; overflow: hidden; }
+    .ticker-item { white-space: nowrap; display: flex; gap: 8px; align-items: center; }
+    .badge { padding: 1px 6px; border-radius: 2px; font-size: 10px; }
+    .badge.tax { background: var(--rust); }
+    .badge.pre { background: #8B1C1C; }
+    .badge.new { background: var(--sage); }
+
+    /* HERO */
+    .hero { padding: 4rem 2rem 3rem; text-align: center; border-bottom: 0.5px solid var(--border); }
+    .eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 1.2rem; }
+    h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 5vw, 3.6rem); line-height: 1.12; max-width: 640px; margin: 0 auto 1.2rem; }
+    h1 em { font-style: italic; color: var(--rust); }
+    .sub { font-size: 1.05rem; color: var(--muted); max-width: 480px; margin: 0 auto 2rem; line-height: 1.7; }
+    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary { background: var(--dark); color: var(--cream); border: none; padding: 14px 28px; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-block; }
+    .btn-secondary { background: transparent; color: var(--dark); border: 0.5px solid #999; padding: 14px 28px; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; }
+
+    /* TRUST BAR */
+    .trust-bar { display: flex; gap: 2rem; justify-content: center; padding: 1.5rem 2rem; border-bottom: 0.5px solid var(--border); flex-wrap: wrap; }
+    .trust-item { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); }
+
+    /* SECTIONS */
+    section { padding: 3rem 2rem; border-bottom: 0.5px solid var(--border); }
+    .section-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+    h2 { font-family: 'DM Serif Display', serif; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.2; margin-bottom: 1.5rem; }
+
+    /* STATS */
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--border); border: 0.5px solid var(--border); margin-bottom: 2rem; }
+    .stat-box { background: var(--cream); padding: 1.2rem 1.5rem; }
+    .stat-num { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--dark); }
+    .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em; }
+
+    /* MAP PLACEHOLDER */
+    .map-placeholder { background: #EEE9DF; border: 0.5px solid var(--border); height: 200px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; margin-bottom: 1rem; border-radius: 4px; }
+    .map-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--dark); }
+    .map-dot.d { background: #F0A83C; }
+    .map-dot.p { background: #D9534F; }
+    .map-legend { display: flex; gap: 1.2rem; font-size: 11px; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: middle; }
+
+    /* LEAD CARDS */
+    .lead-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: var(--border); border: 0.5px solid var(--border); }
+    .lead-card { background: var(--cream); padding: 1.5rem; cursor: pointer; transition: background 0.15s; }
+    .lead-card:hover { background: #F3EFE6; }
+    .lead-card.blurred { filter: blur(3px); pointer-events: none; user-select: none; }
+    .lead-tag { display: inline-block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; margin-bottom: 10px; font-weight: 500; }
+    .tag-delinquent { background: #FEF0E0; color: #944E0A; }
+    .tag-preforeclosure { background: #FBEAEA; color: #8B1C1C; }
+    .tag-absentee { background: #EAF2EE; color: #1D5E36; }
+    .lead-addr { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .lead-meta { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .lead-val { font-family: 'DM Serif Display', serif; font-size: 1.4rem; margin-top: 8px; }
+    .lead-val span { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .unlock-note { margin-top: 1rem; font-size: 12px; color: var(--muted); text-align: center; }
+
+    /* FEATURES */
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    .feat { padding: 1.25rem; border: 0.5px solid var(--border); }
+    .feat h3 { font-size: 14px; font-weight: 500; margin-bottom: 6px; margin-top: 10px; }
+    .feat p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* PRICING */
+    .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--border); border: 0.5px solid var(--border); }
+    .plan { background: var(--cream); padding: 1.5rem; }
+    .plan.featured { background: var(--dark); color: var(--cream); }
+    .plan-name { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .plan.featured .plan-name { color: var(--gold); }
+    .plan-price { font-family: 'DM Serif Display', serif; font-size: 2.2rem; line-height: 1; margin-bottom: 0.3rem; }
+    .plan-sub { font-size: 11px; margin-bottom: 1.2rem; color: var(--muted); }
+    .plan.featured .plan-sub { color: #AAA; }
+    .plan-features { list-style: none; font-size: 12px; line-height: 2; }
+    .plan.featured .plan-features { color: #CCC; }
+    .plan-btn { margin-top: 1.5rem; width: 100%; padding: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; border-radius: 2px; font-weight: 500; display: block; text-align: center; text-decoration: none; }
+    .btn-dark { background: var(--cream); color: var(--dark); border: none; }
+    .btn-light { background: transparent; color: var(--dark); border: 0.5px solid #BBB; }
+
+    footer { padding: 1.5rem 2rem; text-align: center; font-size: 11px; color: var(--muted); border-top: 0.5px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Parcel<em>IQ</em><sup>beta</sup></div>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="#leads-demo">Sample leads</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#pricing" class="cta">Get access →</a>
+  </div>
+</nav>
+
+<div class="ticker">
+  <div class="ticker-item"><span class="badge new">new</span> 1847 Willow Glen Dr — Tax delinquent 18 mo · Est. $1.24M</div>
+  <div class="ticker-item"><span class="badge pre">pre-FC</span> 4420 Almaden Expy — NOD filed 3 wks ago · Est. $980K</div>
+  <div class="ticker-item"><span class="badge tax">tax</span> 782 S 10th St — Absentee owner · Tax owed $14,200</div>
+</div>
+
+<div class="hero">
+  <div class="eyebrow">San Jose · Santa Clara County · Bay Area</div>
+  <h1>Find deals before they hit <em>the market</em></h1>
+  <p class="sub">Tax-delinquent properties, pre-foreclosure filings, and absentee owners — refreshed weekly, filtered for the South Bay.</p>
+  <div class="cta-row">
+    <a href="#pricing" class="btn-primary">Start free trial →</a>
+    <a href="#leads-demo" class="btn-secondary">See sample leads</a>
+  </div>
+</div>
+
+<div class="trust-bar">
+  <div class="trust-item"><div class="dot"></div>Santa Clara County tax records</div>
+  <div class="trust-item"><div class="dot"></div>Superior Court NOD filings</div>
+  <div class="trust-item"><div class="dot"></div>Updated every 7 days</div>
+  <div class="trust-item"><div class="dot"></div>AI-scored motivation index</div>
+</div>
+
+<section>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num">847</div><div class="stat-lbl">Active leads this week</div></div>
+    <div class="stat-box"><div class="stat-num">312</div><div class="stat-lbl">Tax delinquent (90+ days)</div></div>
+    <div class="stat-box"><div class="stat-num">189</div><div class="stat-lbl">Pre-foreclosure (NOD filed)</div></div>
+    <div class="stat-box"><div class="stat-num">346</div><div class="stat-lbl">Absentee / probate flags</div></div>
+  </div>
+  <div class="map-placeholder">
+    <div class="map-dot d" style="top:30%;left:40%"></div>
+    <div class="map-dot p" style="top:55%;left:62%"></div>
+    <div class="map-dot d" style="top:44%;left:28%"></div>
+    <div class="map-dot p" style="top:35%;left:70%"></div>
+    <div class="map-dot d" style="top:68%;left:50%"></div>
+    <div class="map-dot p" style="top:22%;left:55%"></div>
+    <div class="map-dot d" style="top:60%;left:35%"></div>
+    <div class="map-dot p" style="top:48%;left:78%"></div>
+    <div class="map-dot d" style="top:75%;left:65%"></div>
+    <div style="font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">San Jose coverage map · interactive map coming soon</div>
+  </div>
+  <div class="map-legend">
+    <span><span class="legend-dot" style="background:#F0A83C"></span>Tax delinquent</span>
+    <span><span class="legend-dot" style="background:#D9534F"></span>Pre-foreclosure</span>
+  </div>
+</section>
+
+<section id="leads-demo">
+  <div class="section-label">Sample leads</div>
+  <h2>Real data, real opportunity</h2>
+  <div class="lead-grid">
+    <div class="lead-card">
+      <div class="lead-tag tag-delinquent">Tax delinquent</div>
+      <div class="lead-addr">1847 Willow Glen Dr, SJ 95125</div>
+      <div class="lead-meta">Owed: $22,400 · 18 months past due<br>Owner: Garcia, R. · Absentee flag</div>
+      <div class="lead-val">$1,240,000 <span>est. value</span></div>
+    </div>
+    <div class="lead-card">
+      <div class="lead-tag tag-preforeclosure">Pre-foreclosure</div>
+      <div class="lead-addr">4420 Almaden Expy #12, SJ 95118</div>
+      <div class="lead-meta">NOD filed: Mar 4, 2026 · Lender: WF Bank<br>Owner-occupied · Mortgage: $640K</div>
+      <div class="lead-val">$980,000 <span>est. value</span></div>
+    </div>
+    <div class="lead-card">
+      <div class="lead-tag tag-delinquent">Tax delinquent</div>
+      <div class="lead-addr">782 S 10th St, SJ 95112</div>
+      <div class="lead-meta">Owed: $14,200 · 11 months past due<br>Vacant lot · Zoned R-2</div>
+      <div class="lead-val">$420,000 <span>est. value</span></div>
+    </div>
+    <div class="lead-card blurred">
+      <div class="lead-tag tag-absentee">Absentee owner</div>
+      <div class="lead-addr">███ ████████ Ave, SJ 95128</div>
+      <div class="lead-meta">Last known contact: 2021<br>3 bed / 2 bath · No MLS history</div>
+      <div class="lead-val">$1,100,000 <span>est. value</span></div>
+    </div>
+  </div>
+  <p class="unlock-note">Unlock full contact info, owner history, and AI motivation score with a subscription.</p>
+</section>
+
+<section id="how-it-works">
+  <div class="section-label">Features</div>
+  <h2>Built for Bay Area agents</h2>
+  <div class="features">
+    <div class="feat">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="2" stroke="#1A1A16" stroke-width="1.2"/><path d="M6 10h8M6 6h8M6 14h4" stroke="#1A1A16" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <h3>Weekly lead refresh</h3>
+      <p>New tax delinquency and NOD records pulled from Santa Clara County every 7 days.</p>
+    </div>
+    <div class="feat">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#1A1A16" stroke-width="1.2"/><path d="M10 6v4l3 2" stroke="#1A1A16" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <h3>AI motivation score</h3>
+      <p>Each lead is scored 1–100 for seller motivation based on delinquency age, equity, and owner signals.</p>
+    </div>
+    <div class="feat">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 5h12M4 10h8M4 15h10" stroke="#1A1A16" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <h3>Skip-traced contacts</h3>
+      <p>Owner phone, email, and mailing address included on Pro and Team plans.</p>
+    </div>
+    <div class="feat">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="9" width="14" height="9" rx="1.5" stroke="#1A1A16" stroke-width="1.2"/><path d="M7 9V7a3 3 0 116 0v2" stroke="#1A1A16" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <h3>CRM export</h3>
+      <p>Download to CSV or push directly to Follow Up Boss, KV Core, and LionDesk.</p>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2>Subscription plans</h2>
+  <div class="plans">
+    <div class="plan">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$79</div>
+      <div class="plan-sub">per month</div>
+      <ul class="plan-features">
+        <li>25 leads / month</li>
+        <li>Tax delinquent only</li>
+        <li>Property + est. value</li>
+        <li>CSV export</li>
+      </ul>
+      <a href="/signup?plan=starter" class="plan-btn btn-light">Get started</a>
+    </div>
+    <div class="plan featured">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$199</div>
+      <div class="plan-sub">per month · most popular</div>
+      <ul class="plan-features">
+        <li>Unlimited leads</li>
+        <li>All lead types</li>
+        <li>Skip-traced contacts</li>
+        <li>AI motivation score</li>
+        <li>CRM integrations</li>
+      </ul>
+      <a href="/signup?plan=pro" class="plan-btn btn-dark">Start free trial →</a>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Team</div>
+      <div class="plan-price">$449</div>
+      <div class="plan-sub">per month</div>
+      <ul class="plan-features">
+        <li>5 agent seats</li>
+        <li>Lead assignment tools</li>
+        <li>Neighborhood alerts</li>
+        <li>Priority support</li>
+        <li>API access</li>
+      </ul>
+      <a href="/contact" class="plan-btn btn-light">Contact sales</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  © 2026 ParcellIQ · Data sourced from Santa Clara County public records · Not affiliated with any government agency
+</footer>
+
+</body>
+</html>
