@@ -39,7 +39,24 @@ SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")  # use service key for 
 # ── ATTOM Data API (https://api.attomdata.com) ───────────────────────────────
 ATTOM_KEY = os.getenv("ATTOM_API_KEY")
 ATTOM_BASE = "https://api.attomdata.com/propertyapi/v1.0.0"
-DEFAULT_ATTOM_ZIP_LIMIT = int(os.getenv("ATTOM_ZIP_LIMIT", "5"))
+
+
+def get_env_positive_int(name: str, default: int) -> int:
+    """Parse a positive int environment variable with fallback."""
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    try:
+        parsed = int(raw_value)
+        if parsed < 1:
+            raise ValueError
+        return parsed
+    except ValueError:
+        log.warning("Invalid %s=%r; using default %s", name, raw_value, default)
+        return default
+
+
+DEFAULT_ATTOM_ZIP_LIMIT = get_env_positive_int("ATTOM_ZIP_LIMIT", 5)
 
 # ── Santa Clara County target area ──────────────────────────────────────────
 SJ_ZIP_CODES = [
@@ -317,13 +334,28 @@ def upsert_lead(supabase: Client, lead_data: dict, property_id: str) -> bool:
         return False
 
 
+def create_harvest_run(supabase: Client, source: str, lead_type: str) -> str | None:
+    """Create a harvest run row and return its ID."""
+    try:
+        result = supabase.table("harvest_runs").insert({
+            "source": source,
+            "lead_type": lead_type,
+        }).execute()
+        if result.data and len(result.data) > 0 and result.data[0].get("id"):
+            return result.data[0]["id"]
+        log.error("Failed to create harvest run: no row returned")
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.error("Failed to create harvest run: %s", exc)
+        return None
+
+
 # ── MAIN HARVEST RUNNERS ─────────────────────────────────────────────────────
 def run_preforeclosure_harvest(supabase: Client, zip_limit: int = DEFAULT_ATTOM_ZIP_LIMIT):
     log.info("=== Starting pre-foreclosure harvest ===")
-    run = supabase.table("harvest_runs").insert({
-        "source": "attom", "lead_type": "pre_foreclosure"
-    }).execute().data[0]
-    run_id = run["id"]
+    run_id = create_harvest_run(supabase, source="attom", lead_type="pre_foreclosure")
+    if not run_id:
+        return
 
     fetched = inserted = errors = 0
 
@@ -355,10 +387,9 @@ def run_preforeclosure_harvest(supabase: Client, zip_limit: int = DEFAULT_ATTOM_
 
 def run_tax_delinquent_harvest(supabase: Client):
     log.info("=== Starting tax delinquent harvest ===")
-    run = supabase.table("harvest_runs").insert({
-        "source": "county_scraper", "lead_type": "tax_delinquent"
-    }).execute().data[0]
-    run_id = run["id"]
+    run_id = create_harvest_run(supabase, source="county_scraper", lead_type="tax_delinquent")
+    if not run_id:
+        return
 
     raw_records = fetch_county_tax_delinquent()
     fetched = len(raw_records)
