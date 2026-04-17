@@ -38,6 +38,7 @@ SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")  # use service key for 
 # ── ATTOM Data API (https://api.attomdata.com) ───────────────────────────────
 ATTOM_KEY = os.getenv("ATTOM_API_KEY")
 ATTOM_BASE = "https://api.attomdata.com/propertyapi/v1.0.0"
+DEFAULT_ATTOM_ZIP_LIMIT = int(os.getenv("ATTOM_ZIP_LIMIT", "5"))
 
 # ── Santa Clara County target area ──────────────────────────────────────────
 SJ_ZIP_CODES = [
@@ -57,6 +58,25 @@ def get_supabase() -> Client:
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         raise RuntimeError("Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables")
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+
+def extract_iso_date(value: str | None) -> str | None:
+    """Return YYYY-MM-DD from an input string when possible."""
+    if not value or not isinstance(value, str):
+        return None
+    if len(value) < 10:
+        return None
+    return value[:10]
+
+
+def parse_iso_date(value: str | None) -> date | None:
+    """Parse YYYY-MM-DD string into a date object."""
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 
 # ── MOTIVATION SCORING ───────────────────────────────────────────────────────
@@ -93,8 +113,9 @@ def compute_motivation_score(lead: dict) -> tuple[int, str]:
         notes.append("Notice of Trustee Sale filed — urgent")
     elif lead.get("nod_filed_date"):
         nod = lead["nod_filed_date"]
-        if isinstance(nod, date):
-            nod_age = (date.today() - nod).days
+        nod_date = nod if isinstance(nod, date) else parse_iso_date(nod)
+        if nod_date:
+            nod_age = (date.today() - nod_date).days
             if nod_age > 90:
                 score += 30
                 notes.append("NOD > 90 days old")
@@ -180,8 +201,8 @@ def parse_attom_preforeclosure(raw: dict) -> tuple[dict, dict]:
 
     lead_data = {
         "lead_type": "pre_foreclosure",
-        "nod_filed_date": nod_date_str[:10] if nod_date_str else None,
-        "nts_filed_date": nts_date_str[:10] if nts_date_str else None,
+        "nod_filed_date": extract_iso_date(nod_date_str),
+        "nts_filed_date": extract_iso_date(nts_date_str),
         "lender_name": prefc.get("lendername"),
         "loan_balance": prefc.get("openloans", {}).get("amount1stmtg"),
         "owner_name": raw.get("owner", {}).get("owner1", {}).get("fullname"),
@@ -260,7 +281,7 @@ def upsert_property(supabase: Client, property_data: dict) -> str | None:
         if result.data:
             return result.data[0]["id"]
     except Exception as exc:  # noqa: BLE001
-        log.error("Failed to upsert property %s: %s", property_data.get("apn"), exc)
+        log.error("Failed to upsert property record: %s", exc)
     return None
 
 
@@ -288,7 +309,7 @@ def upsert_lead(supabase: Client, lead_data: dict, property_id: str) -> bool:
 
 
 # ── MAIN HARVEST RUNNERS ─────────────────────────────────────────────────────
-def run_preforeclosure_harvest(supabase: Client):
+def run_preforeclosure_harvest(supabase: Client, zip_limit: int = DEFAULT_ATTOM_ZIP_LIMIT):
     log.info("=== Starting pre-foreclosure harvest ===")
     run = supabase.table("harvest_runs").insert({
         "source": "attom", "lead_type": "pre_foreclosure"
@@ -297,7 +318,7 @@ def run_preforeclosure_harvest(supabase: Client):
 
     fetched = inserted = errors = 0
 
-    for zip_code in SJ_ZIP_CODES[:5]:  # start with 5 zips; scale up once live
+    for zip_code in SJ_ZIP_CODES[: max(zip_limit, 1)]:
         log.info("Fetching pre-foreclosures for zip %s...", zip_code)
         raw_records = fetch_attom_preforeclosures(zip_code)
         fetched += len(raw_records)
@@ -367,9 +388,9 @@ def run_tax_delinquent_harvest(supabase: Client):
     log.info("=== Tax delinquent harvest done: %s/%s leads saved ===", inserted, fetched)
 
 
-def run_all_harvests(supabase: Client):
+def run_all_harvests(supabase: Client, zip_limit: int = DEFAULT_ATTOM_ZIP_LIMIT):
     run_tax_delinquent_harvest(supabase)
-    run_preforeclosure_harvest(supabase)
+    run_preforeclosure_harvest(supabase, zip_limit=zip_limit)
 
 
 # ── SCHEDULER ────────────────────────────────────────────────────────────────
@@ -377,6 +398,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ParcellIQ Data Harvester")
     parser.add_argument("--source", choices=["attom", "county", "all"], default="all")
     parser.add_argument("--type", choices=["tax_delinquent", "pre_foreclosure", "all"], default="all")
+    parser.add_argument("--zip-limit", type=int, default=DEFAULT_ATTOM_ZIP_LIMIT)
     parser.add_argument("--schedule", action="store_true", help="Run on weekly schedule")
     args = parser.parse_args()
 
@@ -384,14 +406,14 @@ if __name__ == "__main__":
 
     if args.schedule:
         log.info("Scheduler started — will run every Monday at 6:00 AM")
-        schedule.every().monday.at("06:00").do(lambda: run_all_harvests(sb))
-        run_all_harvests(sb)  # also run immediately on start
+        schedule.every().monday.at("06:00").do(lambda: run_all_harvests(sb, zip_limit=args.zip_limit))
+        run_all_harvests(sb, zip_limit=args.zip_limit)  # also run immediately on start
         while True:
             schedule.run_pending()
             time.sleep(60)
     elif args.type == "tax_delinquent":
         run_tax_delinquent_harvest(sb)
     elif args.type == "pre_foreclosure":
-        run_preforeclosure_harvest(sb)
+        run_preforeclosure_harvest(sb, zip_limit=args.zip_limit)
     else:
-        run_all_harvests(sb)
+        run_all_harvests(sb, zip_limit=args.zip_limit)
