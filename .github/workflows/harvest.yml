@@ -1,0 +1,27 @@
+name: Weekly Harvest
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'   # Every Monday at 6:00 AM PT (UTC-8)
+  workflow_dispatch:        # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run harvester
+        run: python harvester.py --type all
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ATTOM_API_KEY: ${{ secrets.ATTOM_API_KEY }}
+          ATTOM_ZIP_LIMIT: ${{ vars.ATTOM_ZIP_LIMIT || '5' }}
