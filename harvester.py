@@ -74,6 +74,10 @@ def parse_iso_date(value: str | None) -> date | None:
     """Parse YYYY-MM-DD string into a date object."""
     if not value:
         return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 
 def positive_int(value: str) -> int:
@@ -82,10 +86,6 @@ def positive_int(value: str) -> int:
     if parsed < 1:
         raise argparse.ArgumentTypeError("must be a positive integer")
     return parsed
-    try:
-        return datetime.strptime(value, "%Y-%m-%d").date()
-    except ValueError:
-        return None
 
 
 # ── MOTIVATION SCORING ───────────────────────────────────────────────────────
@@ -327,7 +327,7 @@ def run_preforeclosure_harvest(supabase: Client, zip_limit: int = DEFAULT_ATTOM_
 
     fetched = inserted = errors = 0
 
-    for zip_code in SJ_ZIP_CODES[: max(zip_limit, 1)]:
+    for zip_code in SJ_ZIP_CODES[:zip_limit]:
         log.info("Fetching pre-foreclosures for zip %s...", zip_code)
         raw_records = fetch_attom_preforeclosures(zip_code)
         fetched += len(raw_records)
